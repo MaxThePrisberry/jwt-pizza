@@ -10,7 +10,7 @@ async function basicInit(page: Page) {
     const loginReq = route.request().postDataJSON();
     const user = validUsers[loginReq.email];
     if (!user || user.password !== loginReq.password) {
-      await route.fulfill({ status: 401, json: { error: 'Unauthorized' } });
+      await route.fulfill({ status: 404, json: { message: 'unknown user' } });
       return;
     }
     loggedInUser = validUsers[loginReq.email];
@@ -112,4 +112,14 @@ test('login', async ({ page }) => {
   await page.getByRole('button', { name: 'Login' }).click();
   await expect(page.getByRole('link', { name: 'pd' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Login' })).toHaveCount(0);
+});
+
+test('login with wrong password', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('d@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('wrong');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await expect(page.getByRole('main')).toContainText('{"code":404,"message":"unknown user"}');
+  await expect(page.getByRole('link', { name: 'pd' })).toHaveCount(0);
 });
