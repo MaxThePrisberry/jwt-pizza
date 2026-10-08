@@ -105,6 +105,15 @@ async function basicInit(page: Page) {
   });
 
   await page.route(/\/api\/franchise\/\d+$/, async (route) => {
+    if (route.request().method() === 'DELETE') {
+      const franchiseId = route.request().url().split('/').pop();
+      franchises.splice(
+        franchises.findIndex((franchise) => franchise.id === franchiseId),
+        1
+      );
+      await route.fulfill({ json: { message: 'franchise deleted' } });
+      return;
+    }
     expect(route.request().method()).toBe('GET');
     const userId = route.request().url().split('/').pop();
     await route.fulfill({ json: franchises.filter((franchise) => franchise.admins?.some((admin) => admin.id === userId)) });
@@ -385,4 +394,22 @@ test('create franchise', async ({ page }) => {
   await page.getByRole('button', { name: '»' }).click();
   await expect(page.getByRole('table')).toContainText('testFranchisee');
   await expect(page.getByRole('table')).toContainText('pizza tester');
+});
+
+test('close franchise', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('a@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.getByRole('link', { name: 'Admin' }).click();
+  await page.getByRole('button', { name: '»' }).click();
+  await page.getByRole('row', { name: 'topSpot pizza owner' }).getByRole('button').click();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('table')).toContainText('pizzaPocket');
+  await expect(page.getByRole('button', { name: '»' })).toBeDisabled();
+  await page.getByRole('textbox', { name: 'Filter franchises' }).fill('topSpot');
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect(page.getByRole('table')).not.toContainText('pizzaPocket');
+  await expect(page.getByRole('table')).not.toContainText('topSpot');
 });
