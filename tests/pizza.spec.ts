@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 import { test, expect } from './testSetup';
-import { Role, User } from '../src/service/pizzaService';
+import { Franchise, Role, User } from '../src/service/pizzaService';
 
 async function basicInit(page: Page) {
   let loggedInUser: User | undefined;
@@ -8,15 +8,30 @@ async function basicInit(page: Page) {
     'd@jwt.com': { id: '2', name: 'pizza diner', email: 'd@jwt.com', password: 'diner', roles: [{ role: Role.Diner }] },
     'f@jwt.com': { id: '3', name: 'pizza franchisee', email: 'f@jwt.com', password: 'franchisee', roles: [{ role: Role.Diner }, { role: Role.Franchisee, objectId: '1' }] },
   };
-  const pizzaPocket = {
-    id: 1,
-    name: 'pizzaPocket',
-    admins: [{ id: 3, name: 'pizza franchisee', email: 'f@jwt.com' }],
-    stores: [
-      { id: 1, name: 'SLC', totalRevenue: 0.032 },
-      { id: 2, name: 'Provo', totalRevenue: 0 },
-    ],
-  };
+  const franchises: Franchise[] = [
+    {
+      id: '1',
+      name: 'pizzaPocket',
+      admins: [{ id: '3', name: 'pizza franchisee', email: 'f@jwt.com' }],
+      stores: [
+        { id: '1', name: 'SLC', totalRevenue: 0.032 },
+        { id: '2', name: 'Provo', totalRevenue: 0 },
+      ],
+    },
+    {
+      id: '2',
+      name: 'LotaPizza',
+      admins: [{ id: '5', name: 'pizza owner', email: 'o@jwt.com' }],
+      stores: [
+        { id: '3', name: 'Lehi', totalRevenue: 0 },
+        { id: '4', name: 'Springville', totalRevenue: 0 },
+        { id: '5', name: 'American Fork', totalRevenue: 0 },
+      ],
+    },
+    { id: '3', name: 'PizzaCorp', admins: [{ id: '5', name: 'pizza owner', email: 'o@jwt.com' }], stores: [{ id: '6', name: 'Spanish Fork', totalRevenue: 0 }] },
+    { id: '4', name: 'topSpot', admins: [{ id: '5', name: 'pizza owner', email: 'o@jwt.com' }], stores: [] },
+  ];
+  let nextStoreId = 7;
 
   await page.route('*/**/api/auth', async (route) => {
     if (route.request().method() === 'DELETE') {
@@ -61,33 +76,46 @@ async function basicInit(page: Page) {
   });
 
   await page.route(/\/api\/franchise(\?.*)?$/, async (route) => {
-    const franchiseRes = {
-      franchises: [{ id: 1, name: 'pizzaPocket', stores: [{ id: 1, name: 'SLC' }] }],
-      more: false,
-    };
     expect(route.request().method()).toBe('GET');
-    await route.fulfill({ json: franchiseRes });
+    const params = new URL(route.request().url()).searchParams;
+    const pageNumber = Number(params.get('page') ?? 0);
+    const limit = Number(params.get('limit') ?? 10);
+    const namePattern = new RegExp('^' + (params.get('name') ?? '*').replace(/\*/g, '.*') + '$', 'i');
+    const matches = franchises.filter((franchise) => namePattern.test(franchise.name));
+    const pageOfFranchises = matches.slice(pageNumber * limit, (pageNumber + 1) * limit);
+    const isAdmin = loggedInUser?.roles?.some((role) => role.role === Role.Admin);
+    const franchiseList = isAdmin ? pageOfFranchises : pageOfFranchises.map((franchise) => ({ id: franchise.id, name: franchise.name, stores: franchise.stores.map((store) => ({ id: store.id, name: store.name })) }));
+    await route.fulfill({ json: { franchises: franchiseList, more: matches.length > (pageNumber + 1) * limit } });
   });
 
   await page.route(/\/api\/franchise\/\d+$/, async (route) => {
     expect(route.request().method()).toBe('GET');
     const userId = route.request().url().split('/').pop();
-    await route.fulfill({ json: userId === '3' ? [pizzaPocket] : [] });
+    await route.fulfill({ json: franchises.filter((franchise) => franchise.admins?.some((admin) => admin.id === userId)) });
   });
 
   await page.route(/\/api\/franchise\/\d+\/store$/, async (route) => {
     expect(route.request().method()).toBe('POST');
-    expect(route.request().url()).toMatch(/\/api\/franchise\/1\/store$/);
-    const store = { id: pizzaPocket.stores.length + 1, name: route.request().postDataJSON().name, totalRevenue: 0 };
-    pizzaPocket.stores.push(store);
-    await route.fulfill({ json: { id: store.id, franchiseId: pizzaPocket.id, name: store.name } });
+    const [, franchiseId] = route.request().url().match(/\/api\/franchise\/(\d+)\/store$/)!;
+    const franchise = franchises.find((franchise) => franchise.id === franchiseId);
+    if (!franchise) {
+      await route.fulfill({ status: 404, json: { message: 'unknown franchise' } });
+      return;
+    }
+    const store = { id: String(nextStoreId++), name: route.request().postDataJSON().name, totalRevenue: 0 };
+    franchise.stores.push(store);
+    await route.fulfill({ json: { id: store.id, franchiseId: franchise.id, name: store.name } });
   });
 
   await page.route(/\/api\/franchise\/\d+\/store\/\d+$/, async (route) => {
     expect(route.request().method()).toBe('DELETE');
-    expect(route.request().url()).toMatch(/\/api\/franchise\/1\/store\/\d+$/);
-    const storeId = Number(route.request().url().split('/').pop());
-    pizzaPocket.stores = pizzaPocket.stores.filter((store) => store.id !== storeId);
+    const [, franchiseId, storeId] = route.request().url().match(/\/api\/franchise\/(\d+)\/store\/(\d+)$/)!;
+    const franchise = franchises.find((franchise) => franchise.id === franchiseId);
+    if (!franchise) {
+      await route.fulfill({ status: 404, json: { message: 'unknown franchise' } });
+      return;
+    }
+    franchise.stores = franchise.stores.filter((store) => store.id !== storeId);
     await route.fulfill({ json: { message: 'store deleted' } });
   });
 
