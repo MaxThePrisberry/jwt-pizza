@@ -191,3 +191,19 @@ test('diner dashboard', async ({ page }) => {
   await expect(page.getByRole('main')).toContainText('role: diner');
   await expect(page.getByRole('row', { name: '23 0.008 ₿ 2026-10-08T06:09:25.000Z' })).toBeVisible();
 });
+
+test('diner dashboard with no orders', async ({ page }) => {
+  await basicInit(page);
+  await page.route('*/**/api/order', async (route) => {
+    expect(route.request().method()).toBe('GET');
+    await route.fulfill({ json: { dinerId: 2, orders: [], page: 1 } });
+  });
+
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('d@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('diner');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.getByRole('link', { name: 'pd' }).click();
+  await expect(page.getByRole('main')).toContainText('How have you lived this long without having a pizza?');
+  await expect(page.getByRole('table')).toHaveCount(0);
+});
