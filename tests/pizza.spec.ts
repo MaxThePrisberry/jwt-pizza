@@ -433,3 +433,10 @@ test('about page', async ({ page }) => {
   await expect(page.getByRole('main')).toContainText('The secret sauce');
   await expect(page.getByRole('main')).toContainText('our employees are more than just pizza makers');
 });
+
+test('history page', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'History' }).click();
+  await expect(page.getByRole('heading', { name: 'Mama Rucci, my my' })).toBeVisible();
+  await expect(page.getByRole('main')).toContainText('Pizza has a long and rich history');
+});
