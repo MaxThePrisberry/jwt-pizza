@@ -5,6 +5,7 @@ import { Franchise, Role, User } from '../src/service/pizzaService';
 async function basicInit(page: Page) {
   let loggedInUser: User | undefined;
   const validUsers: Record<string, User> = {
+    'a@jwt.com': { id: '1', name: '常用名字', email: 'a@jwt.com', password: 'admin', roles: [{ role: Role.Admin }] },
     'd@jwt.com': { id: '2', name: 'pizza diner', email: 'd@jwt.com', password: 'diner', roles: [{ role: Role.Diner }] },
     'f@jwt.com': { id: '3', name: 'pizza franchisee', email: 'f@jwt.com', password: 'franchisee', roles: [{ role: Role.Diner }, { role: Role.Franchisee, objectId: '1' }] },
   };
@@ -319,4 +320,22 @@ test('close store', async ({ page }) => {
   await page.getByRole('button', { name: 'Close' }).click();
   await expect(page.getByRole('row', { name: 'SLC 0.032 ₿ Close' })).toBeVisible();
   await expect(page.getByRole('row', { name: /Provo/ })).toHaveCount(0);
+});
+
+test('admin dashboard', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('a@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.getByRole('link', { name: 'Admin' }).click();
+  await expect(page.getByRole('heading', { name: "Mama Ricci's kitchen" })).toBeVisible();
+  await expect(page.getByRole('table')).toContainText('LotaPizza');
+  await expect(page.getByRole('table')).toContainText('PizzaCorp');
+  await expect(page.getByRole('table')).toContainText('pizzaPocket');
+  await page.getByRole('button', { name: '»' }).click();
+  await expect(page.getByRole('table')).toContainText('topSpot');
+  await expect(page.getByRole('table')).not.toContainText('pizzaPocket');
+  await page.getByRole('button', { name: '«' }).click();
+  await expect(page.getByRole('table')).toContainText('pizzaPocket');
 });
