@@ -426,3 +426,10 @@ test('close store as admin', async ({ page }) => {
   await expect(page.getByRole('table')).toContainText('PizzaCorp');
   await expect(page.getByRole('row', { name: /Spanish Fork/ })).toHaveCount(0);
 });
+
+test('about page', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'About' }).click();
+  await expect(page.getByRole('main')).toContainText('The secret sauce');
+  await expect(page.getByRole('main')).toContainText('our employees are more than just pizza makers');
+});
