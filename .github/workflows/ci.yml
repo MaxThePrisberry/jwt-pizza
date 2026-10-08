@@ -12,15 +12,15 @@ jobs:
     outputs:
       version: ${{ steps.set_version.outputs.version }}
     steps:
-      - name: Checkout repo
+      - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Set Up Node
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
 
-      - name: set version
+      - name: Set Version
         id: set_version
         run: |
           version=$(date +'%Y%m%d.%H%M%S')
@@ -32,7 +32,7 @@ jobs:
           npm ci && npm run build
           cp dist/index.html dist/404.html
 
-      - name: Update pages artifact
+      - name: Update Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist/
