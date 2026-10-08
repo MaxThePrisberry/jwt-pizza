@@ -103,3 +103,13 @@ test('verify pizza', async ({ page }) => {
   await page.getByRole('button', { name: 'Verify' }).click();
   await expect(page.locator('h3')).toHaveText('JWT Pizza - valid');
 });
+
+test('login', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('d@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('diner');
+  await page.getByRole('button', { name: 'Login' }).click();
+  await expect(page.getByRole('link', { name: 'pd' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Login' })).toHaveCount(0);
+});
