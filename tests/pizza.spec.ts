@@ -339,3 +339,19 @@ test('admin dashboard', async ({ page }) => {
   await page.getByRole('button', { name: '«' }).click();
   await expect(page.getByRole('table')).toContainText('pizzaPocket');
 });
+
+test('filter franchises', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('a@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.getByRole('link', { name: 'Admin' }).click();
+  await expect(page.getByRole('table')).toContainText('pizzaPocket');
+  await page.getByRole('textbox', { name: 'Filter franchises' }).fill('Lota');
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect(page.getByRole('table')).toContainText('LotaPizza');
+  await expect(page.getByRole('table')).toContainText('pizza owner');
+  await expect(page.getByRole('table')).not.toContainText('pizzaPocket');
+  await expect(page.getByRole('table')).not.toContainText('PizzaCorp');
+});
