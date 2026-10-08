@@ -440,3 +440,9 @@ test('history page', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Mama Rucci, my my' })).toBeVisible();
   await expect(page.getByRole('main')).toContainText('Pizza has a long and rich history');
 });
+
+test('not found page', async ({ page }) => {
+  await page.goto('/nowhere');
+  await expect(page.getByRole('heading', { name: 'Oops' })).toBeVisible();
+  await expect(page.getByRole('main')).toContainText('dropped a pizza on the floor');
+});
