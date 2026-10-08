@@ -413,3 +413,16 @@ test('close franchise', async ({ page }) => {
   await expect(page.getByRole('table')).not.toContainText('pizzaPocket');
   await expect(page.getByRole('table')).not.toContainText('topSpot');
 });
+
+test('close store as admin', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('a@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.getByRole('link', { name: 'Admin' }).click();
+  await page.getByRole('row', { name: 'Spanish Fork 0 ₿ Close' }).getByRole('button').click();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('table')).toContainText('PizzaCorp');
+  await expect(page.getByRole('row', { name: /Spanish Fork/ })).toHaveCount(0);
+});
