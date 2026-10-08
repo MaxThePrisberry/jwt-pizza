@@ -7,6 +7,12 @@ async function basicInit(page: Page) {
   const validUsers: Record<string, User> = { 'd@jwt.com': { id: '2', name: 'pizza diner', email: 'd@jwt.com', password: 'diner', roles: [{ role: Role.Diner }] } };
 
   await page.route('*/**/api/auth', async (route) => {
+    if (route.request().method() === 'DELETE') {
+      expect(route.request().headers()['authorization']).toBe('Bearer abcdef');
+      loggedInUser = undefined;
+      await route.fulfill({ json: { message: 'logout successful' } });
+      return;
+    }
     const loginReq = route.request().postDataJSON();
     const user = validUsers[loginReq.email];
     if (!user || user.password !== loginReq.password) {
@@ -121,5 +127,17 @@ test('login with wrong password', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Password' }).fill('wrong');
   await page.getByRole('textbox', { name: 'Password' }).press('Enter');
   await expect(page.getByRole('main')).toContainText('{"code":404,"message":"unknown user"}');
+  await expect(page.getByRole('link', { name: 'pd' })).toHaveCount(0);
+});
+
+test('logout', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('d@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('diner');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.getByRole('link', { name: 'Logout' }).click();
+  await expect(page.getByRole('link', { name: 'Login' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Logout' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'pd' })).toHaveCount(0);
 });
