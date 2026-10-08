@@ -4,7 +4,19 @@ import { Role, User } from '../src/service/pizzaService';
 
 async function basicInit(page: Page) {
   let loggedInUser: User | undefined;
-  const validUsers: Record<string, User> = { 'd@jwt.com': { id: '2', name: 'pizza diner', email: 'd@jwt.com', password: 'diner', roles: [{ role: Role.Diner }] } };
+  const validUsers: Record<string, User> = {
+    'd@jwt.com': { id: '2', name: 'pizza diner', email: 'd@jwt.com', password: 'diner', roles: [{ role: Role.Diner }] },
+    'f@jwt.com': { id: '3', name: 'pizza franchisee', email: 'f@jwt.com', password: 'franchisee', roles: [{ role: Role.Diner }, { role: Role.Franchisee, objectId: '1' }] },
+  };
+  const pizzaPocket = {
+    id: 1,
+    name: 'pizzaPocket',
+    admins: [{ id: 3, name: 'pizza franchisee', email: 'f@jwt.com' }],
+    stores: [
+      { id: 1, name: 'SLC', totalRevenue: 0.032 },
+      { id: 2, name: 'Provo', totalRevenue: 0 },
+    ],
+  };
 
   await page.route('*/**/api/auth', async (route) => {
     if (route.request().method() === 'DELETE') {
@@ -59,7 +71,8 @@ async function basicInit(page: Page) {
 
   await page.route(/\/api\/franchise\/\d+$/, async (route) => {
     expect(route.request().method()).toBe('GET');
-    await route.fulfill({ json: [] });
+    const userId = route.request().url().split('/').pop();
+    await route.fulfill({ json: userId === '3' ? [pizzaPocket] : [] });
   });
 
   await page.route('*/**/api/order', async (route) => {
@@ -222,4 +235,17 @@ test('franchise page as diner', async ({ page }) => {
   await page.getByRole('navigation', { name: 'Global' }).getByRole('link', { name: 'Franchise' }).click();
   await expect(page.getByRole('main')).toContainText('So you want a piece of the pie?');
   await expect(page.getByRole('button', { name: 'Create store' })).toHaveCount(0);
+});
+
+test('franchise dashboard', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('f@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('franchisee');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.getByRole('navigation', { name: 'Global' }).getByRole('link', { name: 'Franchise' }).click();
+  await expect(page.getByRole('heading', { name: 'pizzaPocket' })).toBeVisible();
+  await expect(page.getByRole('row', { name: 'SLC 0.032 ₿ Close' })).toBeVisible();
+  await expect(page.getByRole('row', { name: 'Provo 0 ₿ Close' })).toBeVisible();
+  await expect(page.getByText('So you want a piece of the pie?')).toHaveCount(0);
 });
