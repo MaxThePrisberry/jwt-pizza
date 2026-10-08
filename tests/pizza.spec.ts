@@ -58,6 +58,26 @@ async function basicInit(page: Page) {
   });
 
   await page.route('*/**/api/order', async (route) => {
+    if (route.request().method() === 'GET') {
+      const orderHistoryRes = {
+        dinerId: 2,
+        orders: [
+          {
+            id: 23,
+            franchiseId: 1,
+            storeId: 1,
+            date: '2026-10-08T06:09:25.000Z',
+            items: [
+              { id: 1, menuId: 1, description: 'Veggie', price: 0.0038 },
+              { id: 2, menuId: 2, description: 'Pepperoni', price: 0.0042 },
+            ],
+          },
+        ],
+        page: 1,
+      };
+      await route.fulfill({ json: orderHistoryRes });
+      return;
+    }
     const orderReq = route.request().postDataJSON();
     const orderRes = {
       order: { ...orderReq, id: 23 },
@@ -157,4 +177,17 @@ test('register', async ({ page }) => {
   await page.getByRole('button', { name: 'Register' }).click();
   await expect(page.getByRole('link', { name: 'pr' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Register' })).toHaveCount(0);
+});
+
+test('diner dashboard', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('d@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('diner');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.getByRole('link', { name: 'pd' }).click();
+  await expect(page.getByRole('main')).toContainText('pizza diner');
+  await expect(page.getByRole('main')).toContainText('d@jwt.com');
+  await expect(page.getByRole('main')).toContainText('role: diner');
+  await expect(page.getByRole('row', { name: '23 0.008 ₿ 2026-10-08T06:09:25.000Z' })).toBeVisible();
 });
