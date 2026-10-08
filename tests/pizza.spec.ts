@@ -82,3 +82,24 @@ test('purchase with login', async ({ page }) => {
   await expect(page.getByText('Here is your JWT Pizza!')).toBeVisible();
   await expect(page.getByRole('main')).toContainText('0.008 ₿');
 });
+
+test('verify pizza', async ({ page }) => {
+  await basicInit(page);
+  await page.route('*/**/api/order/verify', async (route) => {
+    expect(route.request().method()).toBe('POST');
+    expect(route.request().postDataJSON()).toMatchObject({ jwt: 'eyJpYXQ' });
+    await route.fulfill({ json: { message: 'valid', payload: { vendor: { id: 'supermp' }, diner: { id: 2 }, order: { id: 23 } } } });
+  });
+
+  await page.getByRole('button', { name: 'Order now' }).click();
+  await page.getByRole('combobox').selectOption('1');
+  await page.getByRole('link', { name: 'Image Description Veggie A' }).click();
+  await page.getByRole('link', { name: 'Image Description Pepperoni' }).click();
+  await page.getByRole('button', { name: 'Checkout' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('d@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('diner');
+  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('button', { name: 'Pay now' }).click();
+  await page.getByRole('button', { name: 'Verify' }).click();
+  await expect(page.locator('h3')).toHaveText('JWT Pizza - valid');
+});
