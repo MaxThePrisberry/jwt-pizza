@@ -13,6 +13,12 @@ async function basicInit(page: Page) {
       await route.fulfill({ json: { message: 'logout successful' } });
       return;
     }
+    if (route.request().method() === 'POST') {
+      const registerReq = route.request().postDataJSON();
+      loggedInUser = { id: '6', name: registerReq.name, email: registerReq.email, roles: [{ role: Role.Diner }] };
+      await route.fulfill({ json: { user: loggedInUser, token: 'abcdef' } });
+      return;
+    }
     const loginReq = route.request().postDataJSON();
     const user = validUsers[loginReq.email];
     if (!user || user.password !== loginReq.password) {
@@ -140,4 +146,15 @@ test('logout', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Login' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Logout' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'pd' })).toHaveCount(0);
+});
+
+test('register', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Register' }).click();
+  await page.getByRole('textbox', { name: 'Full name' }).fill('pizza reg');
+  await page.getByRole('textbox', { name: 'Email address' }).fill('r@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('reg');
+  await page.getByRole('button', { name: 'Register' }).click();
+  await expect(page.getByRole('link', { name: 'pr' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Register' })).toHaveCount(0);
 });
