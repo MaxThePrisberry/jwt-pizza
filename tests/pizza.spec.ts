@@ -57,6 +57,11 @@ async function basicInit(page: Page) {
     await route.fulfill({ json: franchiseRes });
   });
 
+  await page.route(/\/api\/franchise\/\d+$/, async (route) => {
+    expect(route.request().method()).toBe('GET');
+    await route.fulfill({ json: [] });
+  });
+
   await page.route('*/**/api/order', async (route) => {
     if (route.request().method() === 'GET') {
       const orderHistoryRes = {
@@ -206,4 +211,15 @@ test('diner dashboard with no orders', async ({ page }) => {
   await page.getByRole('link', { name: 'pd' }).click();
   await expect(page.getByRole('main')).toContainText('How have you lived this long without having a pizza?');
   await expect(page.getByRole('table')).toHaveCount(0);
+});
+
+test('franchise page as diner', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('d@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('diner');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.getByRole('navigation', { name: 'Global' }).getByRole('link', { name: 'Franchise' }).click();
+  await expect(page.getByRole('main')).toContainText('So you want a piece of the pie?');
+  await expect(page.getByRole('button', { name: 'Create store' })).toHaveCount(0);
 });
