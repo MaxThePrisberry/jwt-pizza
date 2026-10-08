@@ -75,6 +75,14 @@ async function basicInit(page: Page) {
     await route.fulfill({ json: userId === '3' ? [pizzaPocket] : [] });
   });
 
+  await page.route(/\/api\/franchise\/\d+\/store$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    expect(route.request().url()).toMatch(/\/api\/franchise\/1\/store$/);
+    const store = { id: pizzaPocket.stores.length + 1, name: route.request().postDataJSON().name, totalRevenue: 0 };
+    pizzaPocket.stores.push(store);
+    await route.fulfill({ json: { id: store.id, franchiseId: pizzaPocket.id, name: store.name } });
+  });
+
   await page.route('*/**/api/order', async (route) => {
     if (route.request().method() === 'GET') {
       const orderHistoryRes = {
@@ -248,4 +256,17 @@ test('franchise dashboard', async ({ page }) => {
   await expect(page.getByRole('row', { name: 'SLC 0.032 ₿ Close' })).toBeVisible();
   await expect(page.getByRole('row', { name: 'Provo 0 ₿ Close' })).toBeVisible();
   await expect(page.getByText('So you want a piece of the pie?')).toHaveCount(0);
+});
+
+test('create store', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('f@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('franchisee');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.getByRole('navigation', { name: 'Global' }).getByRole('link', { name: 'Franchise' }).click();
+  await page.getByRole('button', { name: 'Create store' }).click();
+  await page.getByRole('textbox', { name: 'store name' }).fill('Orem');
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('row', { name: 'Orem 0 ₿ Close' })).toBeVisible();
 });
