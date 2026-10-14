@@ -1,0 +1,15 @@
+import { test, expect } from './testSetup';
+import { basicInit } from './basicInit';
+
+test('update user', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Register' }).click();
+  await page.getByRole('textbox', { name: 'Full name' }).fill('pizza diner');
+  await page.getByRole('textbox', { name: 'Email address' }).fill('user@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('diner');
+  await page.getByRole('button', { name: 'Register' }).click();
+
+  await page.getByRole('link', { name: 'pd' }).click();
+
+  await expect(page.getByRole('main')).toContainText('pizza diner');
+});
