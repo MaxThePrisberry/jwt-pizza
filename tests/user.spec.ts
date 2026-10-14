@@ -33,3 +33,30 @@ test('update user', async ({ page }) => {
 
   await expect(page.getByRole('main')).toContainText('pizza dinerx');
 });
+
+test('update email and password', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('d@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('diner');
+  await page.getByRole('button', { name: 'Login' }).click();
+
+  await page.getByRole('link', { name: 'pd' }).click();
+  await page.getByRole('button', { name: 'Edit' }).click();
+  await page.getByRole('textbox').nth(1).fill('dx@jwt.com');
+  await page.getByRole('textbox').nth(2).fill('dinerx');
+  await page.getByRole('button', { name: 'Update' }).click();
+
+  await page.waitForSelector('[role="dialog"].hidden', { state: 'attached' });
+
+  await page.getByRole('link', { name: 'Logout' }).click();
+  await page.getByRole('link', { name: 'Login' }).click();
+
+  await page.getByRole('textbox', { name: 'Email address' }).fill('dx@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('dinerx');
+  await page.getByRole('button', { name: 'Login' }).click();
+
+  await page.getByRole('link', { name: 'pd' }).click();
+
+  await expect(page.getByRole('main')).toContainText('dx@jwt.com');
+});
