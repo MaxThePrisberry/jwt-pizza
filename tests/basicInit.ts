@@ -45,7 +45,8 @@ async function basicInit(page: Page) {
     }
     if (route.request().method() === 'POST') {
       const registerReq = route.request().postDataJSON();
-      loggedInUser = { id: '6', name: registerReq.name, email: registerReq.email, roles: [{ role: Role.Diner }] };
+      loggedInUser = { id: '6', name: registerReq.name, email: registerReq.email, password: registerReq.password, roles: [{ role: Role.Diner }] };
+      validUsers[registerReq.email] = loggedInUser;
       await route.fulfill({ json: { user: loggedInUser, token: 'abcdef' } });
       return;
     }
