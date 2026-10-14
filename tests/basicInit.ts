@@ -70,6 +70,21 @@ async function basicInit(page: Page) {
     await route.fulfill({ json: loggedInUser });
   });
 
+  await page.route(/\/api\/user\/\d+$/, async (route) => {
+    expect(route.request().method()).toBe('PUT');
+    expect(route.request().headers()['authorization']).toBe('Bearer abcdef');
+    const userId = route.request().url().split('/').pop();
+    const user = Object.values(validUsers).find((user) => user.id === userId)!;
+    const updateReq = route.request().postDataJSON();
+    delete validUsers[user.email!];
+    user.name = updateReq.name || user.name;
+    user.email = updateReq.email || user.email;
+    user.password = updateReq.password || user.password;
+    validUsers[user.email!] = user;
+    loggedInUser = user;
+    await route.fulfill({ json: { user: { ...user, password: undefined }, token: 'abcdef' } });
+  });
+
   await page.route('*/**/api/order/menu', async (route) => {
     const menuRes = [
       { id: 1, title: 'Veggie', image: 'pizza1.png', price: 0.0038, description: 'A garden of delight' },
