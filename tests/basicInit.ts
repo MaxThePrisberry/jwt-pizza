@@ -10,6 +10,9 @@ async function basicInit(page: Page) {
     'f@jwt.com': { id: '3', name: 'pizza franchisee', email: 'f@jwt.com', password: 'franchisee', roles: [{ role: Role.Diner }, { role: Role.Franchisee, objectId: '1' }] },
     't@jwt.com': { id: '4', name: 'pizza tester', email: 't@jwt.com', password: 'test', roles: [{ role: Role.Diner }] },
   };
+  for (let id = 7; id <= 16; id++) {
+    validUsers[`diner${id}@jwt.com`] = { id: String(id), name: `diner ${id}`, email: `diner${id}@jwt.com`, password: 'diner', roles: [{ role: Role.Diner }] };
+  }
   const franchises: Franchise[] = [
     {
       id: '1',
@@ -68,6 +71,20 @@ async function basicInit(page: Page) {
   await page.route('*/**/api/user/me', async (route) => {
     expect(route.request().method()).toBe('GET');
     await route.fulfill({ json: loggedInUser });
+  });
+
+  await page.route(/\/api\/user(\?.*)?$/, async (route) => {
+    expect(route.request().method()).toBe('GET');
+    expect(route.request().headers()['authorization']).toBe('Bearer abcdef');
+    const params = new URL(route.request().url()).searchParams;
+    const pageNumber = Number(params.get('page') ?? 0);
+    const limit = Number(params.get('limit') ?? 10);
+    const namePattern = new RegExp('^' + (params.get('name') ?? '*').replace(/\*/g, '.*') + '$', 'i');
+    const matches = Object.values(validUsers)
+      .filter((user) => namePattern.test(user.name!))
+      .sort((a, b) => Number(a.id) - Number(b.id));
+    const users = matches.slice(pageNumber * limit, (pageNumber + 1) * limit).map((user) => ({ ...user, password: undefined }));
+    await route.fulfill({ json: { users, more: matches.length > (pageNumber + 1) * limit } });
   });
 
   await page.route(/\/api\/user\/\d+$/, async (route) => {

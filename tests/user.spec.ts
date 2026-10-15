@@ -96,3 +96,16 @@ test('update user as admin', async ({ page }) => {
   await expect(page.getByRole('main')).toContainText('admin user');
   await expect(page.getByRole('link', { name: 'Admin' })).toBeVisible();
 });
+
+test('list users', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('a@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin');
+  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('link', { name: 'Admin' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
+  await expect(page.getByRole('row', { name: 'pizza diner' })).toContainText('d@jwt.com');
+  await expect(page.getByRole('row', { name: 'pizza franchisee' })).toContainText('diner, franchisee');
+});
