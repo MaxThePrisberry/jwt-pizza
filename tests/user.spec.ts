@@ -109,3 +109,25 @@ test('list users', async ({ page }) => {
   await expect(usersTable.getByRole('row', { name: 'pizza diner' })).toContainText('d@jwt.com');
   await expect(usersTable.getByRole('row', { name: 'pizza franchisee' })).toContainText('diner, franchisee');
 });
+
+test('list users in pages', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('a@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin');
+  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('link', { name: 'Admin' }).click();
+
+  const usersTable = page.getByRole('table', { name: 'Users' });
+  await expect(usersTable).toContainText('pizza diner');
+  await expect(usersTable).not.toContainText('diner 16');
+  await expect(page.getByRole('button', { name: 'Prev' })).toBeDisabled();
+
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(usersTable).toContainText('diner 16');
+  await expect(usersTable).not.toContainText('pizza diner');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+
+  await page.getByRole('button', { name: 'Prev' }).click();
+  await expect(usersTable).toContainText('pizza diner');
+});
