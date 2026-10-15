@@ -178,14 +178,14 @@ test('admin dashboard', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Password' }).press('Enter');
   await page.getByRole('link', { name: 'Admin' }).click();
   await expect(page.getByRole('heading', { name: "Mama Ricci's kitchen" })).toBeVisible();
-  await expect(page.getByRole('table')).toContainText('LotaPizza');
-  await expect(page.getByRole('table')).toContainText('PizzaCorp');
-  await expect(page.getByRole('table')).toContainText('pizzaPocket');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('LotaPizza');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('PizzaCorp');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('pizzaPocket');
   await page.getByRole('button', { name: '»' }).click();
-  await expect(page.getByRole('table')).toContainText('topSpot');
-  await expect(page.getByRole('table')).not.toContainText('pizzaPocket');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('topSpot');
+  await expect(page.getByRole('table', { name: 'Franchises' })).not.toContainText('pizzaPocket');
   await page.getByRole('button', { name: '«' }).click();
-  await expect(page.getByRole('table')).toContainText('pizzaPocket');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('pizzaPocket');
 });
 
 test('filter franchises', async ({ page }) => {
@@ -195,13 +195,13 @@ test('filter franchises', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Password' }).fill('admin');
   await page.getByRole('textbox', { name: 'Password' }).press('Enter');
   await page.getByRole('link', { name: 'Admin' }).click();
-  await expect(page.getByRole('table')).toContainText('pizzaPocket');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('pizzaPocket');
   await page.getByRole('textbox', { name: 'Filter franchises' }).fill('Lota');
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.getByRole('table')).toContainText('LotaPizza');
-  await expect(page.getByRole('table')).toContainText('pizza owner');
-  await expect(page.getByRole('table')).not.toContainText('pizzaPocket');
-  await expect(page.getByRole('table')).not.toContainText('PizzaCorp');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('LotaPizza');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('pizza owner');
+  await expect(page.getByRole('table', { name: 'Franchises' })).not.toContainText('pizzaPocket');
+  await expect(page.getByRole('table', { name: 'Franchises' })).not.toContainText('PizzaCorp');
 });
 
 test('create franchise', async ({ page }) => {
@@ -216,8 +216,8 @@ test('create franchise', async ({ page }) => {
   await page.getByRole('textbox', { name: 'franchisee admin email' }).fill('t@jwt.com');
   await page.getByRole('button', { name: 'Create' }).click();
   await page.getByRole('button', { name: '»' }).click();
-  await expect(page.getByRole('table')).toContainText('testFranchisee');
-  await expect(page.getByRole('table')).toContainText('pizza tester');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('testFranchisee');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('pizza tester');
 });
 
 test('close franchise', async ({ page }) => {
@@ -230,12 +230,12 @@ test('close franchise', async ({ page }) => {
   await page.getByRole('button', { name: '»' }).click();
   await page.getByRole('row', { name: 'topSpot pizza owner' }).getByRole('button').click();
   await page.getByRole('button', { name: 'Close' }).click();
-  await expect(page.getByRole('table')).toContainText('pizzaPocket');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('pizzaPocket');
   await expect(page.getByRole('button', { name: '»' })).toBeDisabled();
   await page.getByRole('textbox', { name: 'Filter franchises' }).fill('topSpot');
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.getByRole('table')).not.toContainText('pizzaPocket');
-  await expect(page.getByRole('table')).not.toContainText('topSpot');
+  await expect(page.getByRole('table', { name: 'Franchises' })).not.toContainText('pizzaPocket');
+  await expect(page.getByRole('table', { name: 'Franchises' })).not.toContainText('topSpot');
 });
 
 test('close store as admin', async ({ page }) => {
@@ -247,7 +247,7 @@ test('close store as admin', async ({ page }) => {
   await page.getByRole('link', { name: 'Admin' }).click();
   await page.getByRole('row', { name: 'Spanish Fork 0 ₿ Close' }).getByRole('button').click();
   await page.getByRole('button', { name: 'Close' }).click();
-  await expect(page.getByRole('table')).toContainText('PizzaCorp');
+  await expect(page.getByRole('table', { name: 'Franchises' })).toContainText('PizzaCorp');
   await expect(page.getByRole('row', { name: /Spanish Fork/ })).toHaveCount(0);
 });
 
