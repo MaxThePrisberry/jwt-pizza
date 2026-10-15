@@ -131,3 +131,30 @@ test('list users in pages', async ({ page }) => {
   await page.getByRole('button', { name: 'Prev' }).click();
   await expect(usersTable).toContainText('pizza diner');
 });
+
+test('filter users by name', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('a@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin');
+  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('link', { name: 'Admin' }).click();
+
+  const usersTable = page.getByRole('table', { name: 'Users' });
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(usersTable).toContainText('diner 16');
+
+  await page.getByRole('textbox', { name: 'Filter users' }).fill('franchisee');
+  await page.getByRole('button', { name: 'Search' }).click();
+  await expect(usersTable).toContainText('pizza franchisee');
+  await expect(usersTable).not.toContainText('pizza diner');
+
+  await page.getByRole('textbox', { name: 'Filter users' }).fill('diner');
+  await page.getByRole('button', { name: 'Search' }).click();
+  await expect(usersTable).toContainText('diner 15');
+  await expect(usersTable).not.toContainText('pizza franchisee');
+
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(usersTable).toContainText('diner 16');
+  await expect(usersTable).not.toContainText('diner 15');
+});
