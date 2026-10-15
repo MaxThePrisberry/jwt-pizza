@@ -105,7 +105,7 @@ test('list users', async ({ page }) => {
   await page.getByRole('button', { name: 'Login' }).click();
   await page.getByRole('link', { name: 'Admin' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
-  await expect(page.getByRole('row', { name: 'pizza diner' })).toContainText('d@jwt.com');
-  await expect(page.getByRole('row', { name: 'pizza franchisee' })).toContainText('diner, franchisee');
+  const usersTable = page.getByRole('table', { name: 'Users' });
+  await expect(usersTable.getByRole('row', { name: 'pizza diner' })).toContainText('d@jwt.com');
+  await expect(usersTable.getByRole('row', { name: 'pizza franchisee' })).toContainText('diner, franchisee');
 });
