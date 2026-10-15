@@ -88,10 +88,15 @@ async function basicInit(page: Page) {
   });
 
   await page.route(/\/api\/user\/\d+$/, async (route) => {
-    expect(route.request().method()).toBe('PUT');
     expect(route.request().headers()['authorization']).toBe('Bearer abcdef');
     const userId = route.request().url().split('/').pop();
     const user = Object.values(validUsers).find((user) => user.id === userId)!;
+    if (route.request().method() === 'DELETE') {
+      delete validUsers[user.email!];
+      await route.fulfill({ json: { message: 'user deleted' } });
+      return;
+    }
+    expect(route.request().method()).toBe('PUT');
     const updateReq = route.request().postDataJSON();
     delete validUsers[user.email!];
     user.name = updateReq.name || user.name;

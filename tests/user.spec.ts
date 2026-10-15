@@ -158,3 +158,19 @@ test('filter users by name', async ({ page }) => {
   await expect(usersTable).toContainText('diner 16');
   await expect(usersTable).not.toContainText('diner 15');
 });
+
+test('delete user', async ({ page }) => {
+  await basicInit(page);
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill('a@jwt.com');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin');
+  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('link', { name: 'Admin' }).click();
+
+  const usersTable = page.getByRole('table', { name: 'Users' });
+  await expect(usersTable).not.toContainText('diner 13');
+  await usersTable.getByRole('row', { name: 'pizza tester' }).getByRole('button', { name: 'Delete' }).click();
+
+  await expect(usersTable).not.toContainText('pizza tester');
+  await expect(usersTable).toContainText('diner 13');
+});
